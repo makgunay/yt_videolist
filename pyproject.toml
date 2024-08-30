@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "yt-viedolist"
+version = "0.1.0"
+description = ""
+authors = ["Mehmet Akgunay <makgunay@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+google-auth-oauthlib = "^1.2.1"
+google-api-python-client = "^2.143.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
