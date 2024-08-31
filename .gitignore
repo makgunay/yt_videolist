@@ -1,3 +1,4 @@
 .aider*
 YOUR_CLIENT_SECRET_FILE.json
 __pycache__/
+.idea
