@@ -3,3 +3,15 @@ YOUR_CLIENT_SECRET_FILE.json
 __pycache__/
 .idea
 *.csv
+youtube_videos.csv
+
+# Token files
+token.json
+client_secret.json
+*_token.json
+
+# Output files
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json

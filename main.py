@@ -3,6 +3,7 @@ import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
 import csv
+import json
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from datetime import datetime, timezone
@@ -14,7 +15,7 @@ def main():
 
     api_service_name = "youtube"
     api_version = "v3"
-    client_secrets_file = "YOUR_CLIENT_SECRET_FILE.json"
+    client_secrets_file = "client_secret.json"
 
     credentials = None
     if os.path.exists('token.json'):
@@ -33,23 +34,27 @@ def main():
     youtube = googleapiclient.discovery.build(
         api_service_name, api_version, credentials=credentials)
 
-    channel_id = "UCW4Y4bPuafXwVEs0oly5vdw"
+    channel_id = input("Enter the YouTube channel ID: ")
     
     try:
-        uploads_playlist_id = get_uploads_playlist_id(youtube, channel_id)
-        videos = get_all_videos(youtube, uploads_playlist_id)
-        save_to_csv(videos)
-        print(f"Successfully saved {len(videos)} videos to youtube_videos.csv")
+        channel_info = get_channel_info(youtube, channel_id)
+        videos = get_all_videos(youtube, channel_info['uploads_playlist_id'])
+        save_to_files(videos, channel_info['channel_name'])
+        print(f"Successfully saved {len(videos)} videos from channel '{channel_info['channel_name']}' to CSV and JSON")
     except Exception as e:
         print(f"An error occurred: {e}")
 
-def get_uploads_playlist_id(youtube, channel_id):
+def get_channel_info(youtube, channel_id):
     request = youtube.channels().list(
-        part="contentDetails",
+        part="contentDetails,snippet",
         id=channel_id
     )
     response = request.execute()
-    return response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+    channel = response['items'][0]
+    return {
+        'uploads_playlist_id': channel['contentDetails']['relatedPlaylists']['uploads'],
+        'channel_name': channel['snippet']['title']
+    }
 
 def get_video_details(youtube, video_ids):
     request = youtube.videos().list(
@@ -80,6 +85,7 @@ def get_all_videos(youtube, playlist_id):
             video_details = get_video_details(youtube, video_ids)
             for video in video_details:
                 video_info = {
+                    'video_id': video['id'],
                     'title': video['snippet']['title'],
                     'description': video['snippet']['description'],
                     'link': f"https://www.youtube.com/watch?v={video['id']}",
@@ -88,7 +94,7 @@ def get_all_videos(youtube, playlist_id):
                     'like_count': video['statistics'].get('likeCount', 'N/A'),
                     'comment_count': video['statistics'].get('commentCount', 'N/A'),
                     'duration': video['contentDetails']['duration'],
-                    'tags': ', '.join(video['snippet'].get('tags', [])),
+                    'tags': video['snippet'].get('tags', []),  # Keep as list for JSON
                     'category_id': video['snippet']['categoryId']
                 }
                 videos.append(video_info)
@@ -100,13 +106,33 @@ def get_all_videos(youtube, playlist_id):
 
     return videos
 
-def save_to_csv(videos):
-    with open('youtube_videos.csv', 'w', newline='', encoding='utf-8') as file:
-        fieldnames = ['title', 'description', 'link', 'publish_date', 'view_count', 'like_count', 'comment_count', 'duration', 'tags', 'category_id']
+def save_to_files(videos, channel_name):
+    current_date = datetime.now().strftime('%Y%m%d')
+    # Replace any characters that might be invalid in filenames
+    safe_channel_name = "".join(c for c in channel_name if c.isalnum() or c in (' ', '-', '_')).strip()
+    base_filename = f"{safe_channel_name}_{current_date}_{len(videos)}"
+    
+    # Save to CSV
+    csv_filename = f"{base_filename}.csv"
+    with open(csv_filename, 'w', newline='', encoding='utf-8') as file:
+        fieldnames = ['video_id', 'title', 'description', 'link', 'publish_date', 'view_count', 'like_count', 'comment_count', 'duration', 'tags', 'category_id']
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
         for video in videos:
-            writer.writerow(video)
+            # Convert tags list to comma-separated string for CSV
+            video_csv = video.copy()
+            video_csv['tags'] = ', '.join(video['tags'])
+            writer.writerow(video_csv)
+    
+    # Save to JSON
+    json_filename = f"{base_filename}.json"
+    with open(json_filename, 'w', encoding='utf-8') as file:
+        json.dump({
+            'channel_name': channel_name,
+            'export_date': current_date,
+            'video_count': len(videos),
+            'videos': videos
+        }, file, indent=2, ensure_ascii=False)
 
 if __name__ == "__main__":
     main()
