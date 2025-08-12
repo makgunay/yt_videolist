@@ -6,6 +6,10 @@ This document contains project-specific instructions and context for Claude to e
 
 This is a Python tool that extracts video information from YouTube channels using the YouTube Data API v3. It saves data in both CSV and JSON formats and includes analysis tools for video statistics.
 
+**Repository:** https://github.com/makgunay/yt_videolist  
+**License:** MIT License  
+**Author:** Mehmet Akgunay
+
 ## Key Commands
 
 ### Running the Application
@@ -113,6 +117,13 @@ When adding features, consider:
 - Add filtering options (date range, video count limits)
 - Create summary statistics report
 - Add export to other formats (Excel, Markdown table)
+
+## Project Licensing
+
+This project is licensed under the MIT License. When contributing or using this code:
+- Maintain copyright notices
+- Include the LICENSE file in any distributions
+- Feel free to use commercially with attribution
 
 ## Error Handling
 
